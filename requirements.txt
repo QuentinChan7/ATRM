@@ -1,0 +1,7 @@
+# Install a DGL build matching PyTorch and the target CUDA platform separately.
+torch==2.4.0
+numpy==1.26.4
+scipy>=1.10,<2
+tqdm>=4.64,<5
+transformers>=4.51,<5
+safetensors>=0.4,<1
