@@ -16,8 +16,6 @@ DATASETS = {
     "ICEWS14": DatasetConfig(9, 14, semantic=True, static=True),
     "ICEWS18": DatasetConfig(10, 9, semantic=True, static=True),
     "GDELT": DatasetConfig(7, 10),
-    "WIKI": DatasetConfig(2, 10),
-    "YAGO": DatasetConfig(1, 10, layers=1, selection="relation_raw"),
 }
 
 

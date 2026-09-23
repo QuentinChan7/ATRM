@@ -31,7 +31,7 @@ the graph-training environment.
 
 ## Data Preparation
 
-Supported datasets are `ICEWS14`, `ICEWS18`, `GDELT`, `WIKI`, and `YAGO`.
+Supported datasets are `ICEWS14`, `ICEWS18`, and `GDELT`.
 Place each dataset under `data/<DATASET>/`:
 
 ```text
@@ -51,8 +51,8 @@ data/ICEWS14/
 - Mapping files contain `name<TAB>id`, with zero-based contiguous IDs.
 - The first two values in `stat.txt` are the entity and relation counts.
 - ICEWS14 and ICEWS18 additionally use the static entity-word graph
-  `e-w-graph.txt` and semantic features `sbert_features.pt`. The other datasets
-  do not require these two files under the supplied configurations.
+  `e-w-graph.txt` and semantic features `sbert_features.pt`. GDELT does not
+  require these two files under the supplied configuration.
 
 Generate semantic features separately for each ICEWS dataset. With a local
 `bge-small-en-v1.5` encoder directory:
@@ -146,13 +146,11 @@ remaining time.
 
 Dataset-specific settings are defined in `src/config.py`:
 
-| Dataset | History Length | GNN Layers | Static Graph | Semantic Initialization | Checkpoint Selection |
-| --- | ---: | ---: | --- | --- | --- |
-| ICEWS14 | 9 | 2 | Yes | Yes | Filtered relation MRR |
-| ICEWS18 | 10 | 2 | Yes | Yes | Filtered relation MRR |
-| GDELT | 7 | 2 | No | No | Filtered relation MRR |
-| WIKI | 2 | 2 | No | No | Filtered relation MRR |
-| YAGO | 1 | 1 | No | No | Raw relation MRR |
+| Dataset | History Length | GNN Layers |
+| --- | ---: | ---: |
+| ICEWS14 | 9 | 2 |
+| ICEWS18 | 10 | 2 |
+| GDELT | 7 | 2 |
 
 The shared backbone uses hidden dimension 200, dropout 0.2, and history blending
 weight 0.3. Default learning rates are `0.001` for `train` and `0.0001` for

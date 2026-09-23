@@ -16,9 +16,9 @@ from awesome_agent.history_vocabulary import TemporalHistoryVocabulary
 from awesome_agent.target_trace import TARGET_SCHEMA
 from scripts import llm_io
 from scripts.select_reflection_hypotheses import generate, build_catalog
-from src.config import fusion_config
+from src.config import DATASETS, fusion_config
 from src.evaluation import apply_memory, evaluate, make_agent
-from src.launch import parse_args
+from src.launch import main, parse_args
 from src.training import compile_supervision, supervision_kwargs
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -82,6 +82,16 @@ class ToyModel(torch.nn.Module):
 
 
 class ReproductionTest(unittest.TestCase):
+    def test_cli_supported_datasets(self):
+        self.assertEqual(set(DATASETS), {'ICEWS14', 'ICEWS18', 'GDELT'})
+        for dataset in DATASETS:
+            for stage in ('train', 'trace', 'select', 'distill', 'evaluate'):
+                with self.subTest(dataset=dataset, stage=stage):
+                    args = parse_args([stage, '--dataset', dataset, '--work-dir', 'runs/test', '--epochs', '1'])
+                    self.assertEqual(args.dataset, dataset)
+        with patch('sys.stderr', io.StringIO()), self.assertRaises(SystemExit):
+            parse_args(['trace', '--dataset', 'unsupported', '--work-dir', 'runs/test'])
+
     def test_cli_requires_training_budget_and_resolves_paths(self):
         args = parse_args(['train', '--dataset', 'ICEWS14', '--work-dir', 'runs/test', '--epochs', '8'])
         self.assertTrue(args.work_dir.is_absolute())
@@ -141,6 +151,29 @@ class ReproductionTest(unittest.TestCase):
 
 
 class OfflineSelectionTest(unittest.TestCase):
+    def test_selection_uses_dataset_relation_mapping(self):
+        from awesome_agent.llm_trace_distill import LLMTraceDistillTeacher
+
+        with tempfile.TemporaryDirectory() as directory, redirect_stdout(io.StringIO()):
+            root = Path(directory).resolve()
+            for dataset in DATASETS:
+                with self.subTest(dataset=dataset):
+                    data = root / 'data' / dataset
+                    data.mkdir(parents=True)
+                    (data / 'stat.txt').write_text('3 2\n')
+                    mapping = data / 'relation2id.txt'
+                    mapping.write_text('cooperate\t0\nmeet\t1\n')
+                    work = root / 'runs' / dataset
+                    compiled = SimpleNamespace(provenance_context_weights={(0, 1): 1.0})
+                    with patch('scripts.select_reflection_hypotheses.generate') as generate_mock, \
+                         patch.object(LLMTraceDistillTeacher, 'from_trace_file',
+                                      return_value=compiled) as compile_mock:
+                        main(['select', '--dataset', dataset, '--data-root', str(root / 'data'),
+                              '--work-dir', str(work)])
+                    generate_mock.assert_called_once_with(work / 'traces.jsonl', mapping, 2, work / 'selection')
+                    self.assertEqual(compile_mock.call_args.kwargs['source_field'],
+                                     'base_top' if dataset == 'ICEWS14' else 'step_source_relation_id')
+
     def test_llm_selection_temporal_audit_and_training_tensors(self):
         with tempfile.TemporaryDirectory() as directory, redirect_stdout(io.StringIO()):
             root = Path(directory)

@@ -44,9 +44,8 @@ def main(argv=None):
     reference = args.reference_checkpoint or work / 'base.pt'
     if args.stage == 'select':
         from scripts.select_reflection_hypotheses import generate
-        from src.relation_names import prompt_mapping
         stats = (args.data_root / args.dataset / 'stat.txt').read_text().split()
-        mapping = prompt_mapping(args.dataset, args.data_root / args.dataset / 'relation2id.txt', work / 'relation_names.txt')
+        mapping = args.data_root / args.dataset / 'relation2id.txt'
         generate(trace, mapping, int(stats[1]), work / 'selection')
         from awesome_agent.llm_trace_distill import LLMTraceDistillTeacher
         compiled = LLMTraceDistillTeacher.from_trace_file(
